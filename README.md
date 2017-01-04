@@ -1,7 +1,10 @@
-# SWA Dashboard
-Dashboard to monitor and receive alerts for changes in Southwest fare prices.
+# Ryanair Dashboard
+Dashboard to monitor and receive alerts for changes in Ryanair fare prices.
 
 ![image](https://cloud.githubusercontent.com/assets/6979737/17744714/99f15da2-646e-11e6-8f13-60c716f1e865.png)
+
+# This is a fork
+All credit goes to [ezekg](https://github.com/ezekg) for creating this, i mearly removed the crawker abd adapted it for use with Ryanair.
 
 ## Why?
 I'm a lazy programmer who was tired of checking flight prices … and I really wanted
@@ -15,14 +18,14 @@ cd wherever-you-cloned-it-to
 npm link
 ```
 
-If you recieve a ``SyntaxError: Unexpected token ...`` upon running the `swa` command, make sure you are running a version of node that supports ES6 syntax (5.11.0 and up). 
+If you recieve a ``SyntaxError: Unexpected token ...`` upon running the `ryanair` command, make sure you are running a version of node that supports ES6 syntax (5.11.0 and up). 
 
 Under some circumstances, libxmljs may throw an error that looks like this:
 ```
 Error: Could not locate the bindings file. Tried:
- → /root/swa-dashboard/node_modules/libxmljs/build/xmljs.node
+ → /root/ryanair-dashboard/node_modules/libxmljs/build/xmljs.node
  ```
-You can fix it and run `swa` successfully by rebuilding libxmljs manually:
+You can fix it and run `ryanair` successfully by rebuilding libxmljs manually:
 ```
 sudo npm install -g node-gyp
 cd node_modules/libxmljs
@@ -30,7 +33,7 @@ node-gyp rebuild
 ```
 
 ## Usage
-It will scrape Southwest's prices every `n` minutes (`n` = whatever interval you
+It will make an api request for Ryanair's prices every `n` minutes (`n` = whatever interval you
 define via the `--interval` flag) and compare the results, letting you know the
 difference in price since the last interval. The default interval is 30 mins.
 
@@ -41,15 +44,15 @@ of both fares falls below the threshold. Other than `--interval` and the
 Twilio-related options, all other flags are required.
 
 ```bash
-swa \
-  --from 'DAL' \
-  --to 'LGA' \
-  --leave-date '11/01/2016' \
-  --return-date '11/08/2016' \
+ryanair \
+  --from 'DUB' \
+  --to 'BVA' \
+  --leave-date 2017-02-02 \
+  --return-date 2017-02-09 \
   --passengers 2 \
-  --individual-deal-price 50 \ # In dollars (optional)
-  --total-deal-price 120 \ # In dollars (optional)
-  --interval 5 # In minutes (optional)
+  --individual-deal-price 20 \ # In Euro (optional)
+  --total-deal-price 40 \ # In Euro (optional)
+  --interval 1 # In minutes (optional)
 ```
 
 ### Twilio integration
