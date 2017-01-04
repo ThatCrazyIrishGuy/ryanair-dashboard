@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 "use strict"
 
-const osmosis = require("osmosis")
+const rp = require('request-promise');
 const chalk = require("chalk")
 const rainbow = require("chalk-rainbow")
 const twilio = require("twilio")
@@ -144,11 +144,7 @@ class Dashboard {
         },
         options: Object.assign({}, shared, {
           label: "Map",
-          startLon: 54,
-          endLon: 110,
-          startLat: 112,
-          endLat: 140,
-          region: "us"
+          region: "world"
         })
       },
       settings: {
@@ -287,6 +283,7 @@ class Dashboard {
    */
   log(messages) {
     const now = format("MM/dd/yy-hh:mm:ss", new Date())
+    if(typeof messages === 'string') messages = [messages]
     messages.forEach((m) => this.widgets.log.log(`${now}: ${m}`))
   }
 
@@ -340,33 +337,36 @@ const sendTextMessage = (message) => {
  * @return {Void}
  */
 const fetch = () => {
-  osmosis
-    .get("https://www.southwest.com")
-    .submit(".booking-form--form", {
-      twoWayTrip: true,
-      airTranRedirect: "",
-      returnAirport: "RoundTrip",
-      outboundTimeOfDay: "ANYTIME",
-      returnTimeOfDay: "ANYTIME",
-      seniorPassengerCount: 0,
-      fareType: "DOLLARS",
-      originAirport,
-      destinationAirport,
-      outboundDateString,
-      returnDateString,
-      adultPassengerCount
+  var options = {
+    uri: 'https://desktopapps.ryanair.com/en-ie/availability',
+    qs: {
+        ADT: adultPassengerCount,
+        CHD: 0,
+        DateIn: returnDateString,
+        DateOut: outboundDateString,
+        Destination: destinationAirport,
+        Origin: originAirport,
+        FlexDaysIn: 0,
+        FlexDaysOut: 0,
+        INF: 0,
+        RoundTrip: true,
+        TEEN: 0,
+        exists: false
+    },
+    json: true // Automatically parses the JSON string in the response
+  }
+
+  rp(options)
+    .then(function (data) {
+      var outPrice = data.trips[0].dates[0].flights[0].regularFare.fares[0].amount
+      fares.outbound.push(outPrice)
+      var inPrice = data.trips[1].dates[0].flights[0].regularFare.fares[0].amount
+      fares.return.push(outPrice)
     })
-    .find("#faresOutbound .product_price")
-    .then((priceMarkup) => {
-      const matches = priceMarkup.toString().match(/\$.*?(\d+)/)
-      const price = parseInt(matches[1])
-      fares.outbound.push(price)
-    })
-    .find("#faresReturn .product_price")
-    .then((priceMarkup) => {
-      const matches = priceMarkup.toString().match(/\$.*?(\d+)/)
-      const price = parseInt(matches[1])
-      fares.return.push(price)
+    .catch(function (err) {
+      dashboard.log([
+        chalk.red(err.toString())
+      ])
     })
     .done(() => {
       const lowestOutboundFare = Math.min(...fares.outbound)
@@ -446,7 +446,6 @@ const fetch = () => {
       }
 
       dashboard.render()
-
       setTimeout(fetch, interval * TIME_MIN)
     })
 }
