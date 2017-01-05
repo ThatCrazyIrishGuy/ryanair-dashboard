@@ -82,7 +82,7 @@ class Dashboard {
 
     // Configure blessed
     this.screen = blessed.screen({
-      title: "SWA Dashboard",
+      title: "Ryanair Dashboard",
       autoPadding: true,
       dockBorders: true,
       fullUnicode: true,
