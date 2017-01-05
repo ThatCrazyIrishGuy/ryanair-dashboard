@@ -45,8 +45,8 @@ Twilio-related options, all other flags are required.
 
 ```bash
 ryanair \
-  --from 'DUB' \
-  --to 'BVA' \
+  --from DUB \
+  --to BVA \
   --leave-date 2017-02-02 \
   --return-date 2017-02-09 \
   --passengers 2 \
