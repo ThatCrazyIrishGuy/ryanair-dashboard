@@ -392,17 +392,17 @@ const fetch = () => {
         }
 
         if (outboundFareDiff > 0) {
-          outboundFareDiffString = chalk.green(`(down \$${Math.abs(outboundFareDiff)})`)
+          outboundFareDiffString = chalk.green(`(down \€${Math.abs(outboundFareDiff)})`)
         } else if (outboundFareDiff < 0) {
-          outboundFareDiffString = chalk.red(`(up \$${Math.abs(outboundFareDiff)})`)
+          outboundFareDiffString = chalk.red(`(up \€${Math.abs(outboundFareDiff)})`)
         } else if (outboundFareDiff === 0) {
           outboundFareDiffString = chalk.blue(`(no change)`)
         }
 
         if (returnFareDiff > 0) {
-          returnFareDiffString = chalk.green(`(down \$${Math.abs(returnFareDiff)})`)
+          returnFareDiffString = chalk.green(`(down \€${Math.abs(returnFareDiff)})`)
         } else if (returnFareDiff < 0) {
-          returnFareDiffString = chalk.red(`(up \$${Math.abs(returnFareDiff)})`)
+          returnFareDiffString = chalk.red(`(up \€${Math.abs(returnFareDiff)})`)
         } else if (returnFareDiff === 0) {
           returnFareDiffString = chalk.blue(`(no change)`)
         }
@@ -422,7 +422,7 @@ const fetch = () => {
         )
 
         if (awesomeDealIsAwesome) {
-          const message = `Deal alert! Combined total has hit \$${lowestOutboundFare + lowestReturnFare}. Individual fares are \$${lowestOutboundFare} (outbound) and \$${lowestReturnFare} (return).`
+          const message = `Deal alert! Combined total has hit \€${lowestOutboundFare + lowestReturnFare}. Individual fares are \€${lowestOutboundFare} (outbound) and \€${lowestReturnFare} (return).`
 
           // Party time
           dashboard.log([
@@ -435,8 +435,8 @@ const fetch = () => {
         }
 
         dashboard.log([
-          `Lowest fares for an outbound flight is currently \$${[lowestOutboundFare, outboundFareDiffString].filter(i => i).join(" ")}`,
-          `Lowest fares for a return flight is currently \$${[lowestReturnFare, returnFareDiffString].filter(i => i).join(" ")}`
+          `Lowest fares for an outbound flight is currently \€${[lowestOutboundFare, outboundFareDiffString].filter(i => i).join(" ")}`,
+          `Lowest fares for a return flight is currently \€${[lowestReturnFare, returnFareDiffString].filter(i => i).join(" ")}`
         ])
 
         dashboard.plot({
@@ -470,8 +470,8 @@ dashboard.settings([
   `Return date: ${returnDateString}`,
   `Passengers: ${adultPassengerCount}`,
   `Interval: ${pretty(interval * TIME_MIN)}`,
-  `Individual deal price: ${individualDealPrice ? `<= \$${individualDealPrice}` : "disabled"}`,
-  `Total deal price: ${totalDealPrice ? `<= \$${totalDealPrice}` : "disabled"}`,
+  `Individual deal price: ${individualDealPrice ? `<= \€${individualDealPrice}` : "disabled"}`,
+  `Total deal price: ${totalDealPrice ? `<= \€${totalDealPrice}` : "disabled"}`,
   `SMS alerts: ${isTwilioConfigured ? process.env.TWILIO_PHONE_TO : "disabled"}`
 ])
 
