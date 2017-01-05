@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 "use strict"
 
-const rp = require('request-promise');
+const rp = require('request-promise')
 const chalk = require("chalk")
 const rainbow = require("chalk-rainbow")
 const twilio = require("twilio")
@@ -10,6 +10,9 @@ const contrib = require("blessed-contrib")
 const format = require("date-format")
 const pretty = require("pretty-ms")
 const airports = require("airports")
+
+// API constants
+const ryanairUrl = 'https://desktopapps.ryanair.com/en-ie/availability'
 
 // Time constants
 const TIME_MS = 1
@@ -332,43 +335,57 @@ const sendTextMessage = (message) => {
 }
 
 /**
+ * Generate requst object
+ *
+ * @return {promise}
+ */
+function generateRequestObject() {
+  return new Promise(
+    function (resolve, reject) {
+        if(adultPassengerCount && returnDateString && outboundDateString &&
+        destinationAirport && originAirport) {
+            resolve({
+              uri: ryanairUrl,
+              qs: {
+                  ADT: adultPassengerCount,
+                  CHD: 0,
+                  DateIn: returnDateString,
+                  DateOut: outboundDateString,
+                  Destination: destinationAirport,
+                  Origin: originAirport,
+                  FlexDaysIn: 0,
+                  FlexDaysOut: 0,
+                  INF: 0,
+                  RoundTrip: true,
+                  TEEN: 0,
+                  exists: false
+              },
+              json: true // Automatically parses the JSON string in the response
+            })
+        }
+        else {
+          reject('required param not set. required params are: from, to, leave-date, return-date, passengers')
+        }
+    })
+}
+
+/**
  * Fetch latest Southwest prices
  *
  * @return {Void}
  */
 const fetch = () => {
-  var options = {
-    uri: 'https://desktopapps.ryanair.com/en-ie/availability',
-    qs: {
-        ADT: adultPassengerCount,
-        CHD: 0,
-        DateIn: returnDateString,
-        DateOut: outboundDateString,
-        Destination: destinationAirport,
-        Origin: originAirport,
-        FlexDaysIn: 0,
-        FlexDaysOut: 0,
-        INF: 0,
-        RoundTrip: true,
-        TEEN: 0,
-        exists: false
-    },
-    json: true // Automatically parses the JSON string in the response
-  }
-
-  rp(options)
-    .then(function (data) {
+  generateRequestObject()
+    .then((options) => {
+      return rp(options)
+    })
+    .then((data) => {
       var outPrice = data.trips[0].dates[0].flights[0].regularFare.fares[0].amount
       fares.outbound.push(outPrice)
       var inPrice = data.trips[1].dates[0].flights[0].regularFare.fares[0].amount
       fares.return.push(outPrice)
     })
-    .catch(function (err) {
-      dashboard.log([
-        chalk.red(err.toString())
-      ])
-    })
-    .done(() => {
+    .then(() => {
       const lowestOutboundFare = Math.min(...fares.outbound)
       const lowestReturnFare = Math.min(...fares.return)
       var faresAreValid = true
@@ -447,6 +464,12 @@ const fetch = () => {
 
       dashboard.render()
       setTimeout(fetch, interval * TIME_MIN)
+    })
+    .catch((err) => {
+      console.log(err)
+      dashboard.log([
+        chalk.red(err.toString())
+      ])
     })
 }
 
