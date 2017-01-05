@@ -4,7 +4,7 @@ Dashboard to monitor and receive alerts for changes in Ryanair fare prices.
 ![image](https://cloud.githubusercontent.com/assets/6979737/17744714/99f15da2-646e-11e6-8f13-60c716f1e865.png)
 
 # This is a fork
-All credit goes to [ezekg](https://github.com/ezekg) for creating this, i mearly removed the crawler abd adapted it for use with Ryanair.
+All credit goes to [ezekg](https://github.com/ezekg) for creating this, i mearly removed the crawler and adapted it for use with Ryanair.
 
 ## Why?
 I'm a lazy programmer who was tired of checking flight prices … and I really wanted
