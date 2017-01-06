@@ -28,45 +28,31 @@ const fares = {
   return: []
 }
 
-// Command line options
-var originAirport
-var destinationAirport
-var outboundDateString
-var returnDateString
-var adultPassengerCount
-var individualDealPrice
-var totalDealPrice
-var interval = 30 // In minutes
+//parse arguments
+var argv = require("yargs")
+  .version('0.0.1')
+  .usage('Usage: $0 --from <IATA Code> --to <IATA Code> --leave-date <yyyy-mm-dd> -- return-date <yyyy-mm-dd> --passengers <n> --individual-deal-price <n> --total-deal-price <n> --interval <n>')
+  .describe('from', 'Departure Airport')
+  .describe('to', 'Destination Airport')
+  .describe('leave-date', 'Departure Date')
+  .describe('return-date', 'Return Date')
+  .describe('passengers', 'Number Of Passengers')
+  .describe('individual-deal-price', 'Desired Price Per Passenger')
+  .describe('total-deal-price', 'Desired Total Price')
+  .describe('interval', 'API Polling Interval')
+  .demandOption(['from', 'to', 'leave-date', 'return-date', 'passengers'])
+  .default('interval', 30)
+  .argv
 
-// Parse command line options (no validation, sorry!)
-process.argv.forEach((arg, i, argv) => {
-  switch (arg) {
-    case "--from":
-      originAirport = argv[i + 1]
-      break
-    case "--to":
-      destinationAirport = argv[i + 1]
-      break
-    case "--leave-date":
-      outboundDateString = argv[i + 1]
-      break
-    case "--return-date":
-      returnDateString = argv[i + 1]
-      break
-    case "--passengers":
-      adultPassengerCount = argv[i + 1]
-      break
-    case "--individual-deal-price":
-      individualDealPrice = parseInt(argv[i + 1])
-      break
-    case "--total-deal-price":
-      totalDealPrice = parseInt(argv[i + 1])
-      break
-    case "--interval":
-      interval = parseFloat(argv[i + 1])
-      break
-  }
-})
+// Map arguments
+var originAirport = argv.from
+var destinationAirport = argv.to
+var outboundDateString = argv.leaveDate
+var returnDateString = argv.returnDate
+var adultPassengerCount = argv.passengers
+var individualDealPrice = argv.individualDealPrice
+var totalDealPrice = argv.totalDealPrice
+var interval = argv.interval
 
 // Check if Twilio env vars are set
 const isTwilioConfigured = process.env.TWILIO_ACCOUNT_SID &&
@@ -341,31 +327,25 @@ const sendTextMessage = (message) => {
  */
 function generateRequestObject() {
   return new Promise(
-    function (resolve, reject) {
-        if(adultPassengerCount && returnDateString && outboundDateString &&
-        destinationAirport && originAirport) {
-            resolve({
-              uri: ryanairUrl,
-              qs: {
-                  ADT: adultPassengerCount,
-                  CHD: 0,
-                  DateIn: returnDateString,
-                  DateOut: outboundDateString,
-                  Destination: destinationAirport,
-                  Origin: originAirport,
-                  FlexDaysIn: 0,
-                  FlexDaysOut: 0,
-                  INF: 0,
-                  RoundTrip: true,
-                  TEEN: 0,
-                  exists: false
-              },
-              json: true // Automatically parses the JSON string in the response
-            })
-        }
-        else {
-          reject('required param not set. required params are: from, to, leave-date, return-date, passengers')
-        }
+    function (resolve) {
+        resolve({
+          uri: ryanairUrl,
+          qs: {
+              ADT: adultPassengerCount,
+              CHD: 0,
+              DateIn: returnDateString,
+              DateOut: outboundDateString,
+              Destination: destinationAirport,
+              Origin: originAirport,
+              FlexDaysIn: 0,
+              FlexDaysOut: 0,
+              INF: 0,
+              RoundTrip: true,
+              TEEN: 0,
+              exists: false
+          },
+          json: true // Automatically parses the JSON string in the response
+        })
     })
 }
 
@@ -466,7 +446,6 @@ const fetch = () => {
       setTimeout(fetch, interval * TIME_MIN)
     })
     .catch((err) => {
-      console.log(err)
       dashboard.log([
         chalk.red(err.toString())
       ])
