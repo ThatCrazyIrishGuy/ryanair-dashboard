@@ -98,8 +98,12 @@ class Dashboard {
         style: {
           line: "red"
         }
-      },
-      return: {
+      }
+    }
+
+    
+    if (!oneWay)
+      this.graphs.return = {
         title: "Destination/Return",
         x: [],
         y: [],
@@ -107,7 +111,6 @@ class Dashboard {
           line: "yellow"
         }
       }
-    }
 
     // Shared settings
     const shared = {
@@ -224,15 +227,21 @@ class Dashboard {
       y: [...this.graphs.outbound.y, prices.outbound]
     })
 
-    Object.assign(this.graphs.return, {
-      x: [...this.graphs.return.x, now],
-      y: [...this.graphs.return.y, prices.return]
-    })
-
-    this.widgets.graph.setData([
-      this.graphs.outbound,
-      this.graphs.return
-    ])
+    if (!oneWay){
+      Object.assign(this.graphs.return, {
+        x: [...this.graphs.return.x, now],
+        y: [...this.graphs.return.y, prices.return]
+      })
+      this.widgets.graph.setData([
+        this.graphs.outbound,
+        this.graphs.return
+      ])
+    }
+    else{
+      this.widgets.graph.setData([
+        this.graphs.outbound,
+      ])
+    }  
   }
 
   /**
@@ -437,20 +446,24 @@ const fetch = () => {
           }
         }
 
-        if(oneWay)
+        if(oneWay){
           dashboard.log([
             `Lowest fares for an outbound flight is currently \€${[lowestOutboundFare, outboundFareDiffString].filter(i => i).join(" ")}`,
           ])
-        else
+          dashboard.plot({
+            outbound: lowestOutboundFare
+          })
+        }else{
           dashboard.log([
             `Lowest fares for an outbound flight is currently \€${[lowestOutboundFare, outboundFareDiffString].filter(i => i).join(" ")}`,
             `Lowest fares for a return flight is currently \€${[lowestReturnFare, returnFareDiffString].filter(i => i).join(" ")}`
           ])
-
-        dashboard.plot({
-          outbound: lowestOutboundFare,
-          return: lowestReturnFare
-        })
+          dashboard.plot({
+            outbound: lowestOutboundFare,
+            return: lowestReturnFare
+          })
+        }
+          
       }
 
       dashboard.render()
