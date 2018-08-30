@@ -47,8 +47,8 @@ Twilio-related options, all other flags are required.
 ryanair \
   --from DUB \
   --to BVA \
-  --leave-date 2017-02-02 \
-  --return-date 2017-02-09 \
+  --leave-date 2019-02-02 \
+  --return-date 2019-02-09 \
   --passengers 2 \
   --individual-deal-price 20 \ # In Euro (optional)
   --total-deal-price 40 \ # In Euro (optional)
