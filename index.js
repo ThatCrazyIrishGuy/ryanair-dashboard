@@ -376,7 +376,7 @@ const fetch = () => {
       fares.outbound.push(outPrice)
       if(!oneWay){
         var inPrice = data.trips[1].dates[0].flights[0].regularFare.fares[0].amount
-        fares.return.push(outPrice)
+        fares.return.push(inPrice)
       }
     })
     .then(() => {
