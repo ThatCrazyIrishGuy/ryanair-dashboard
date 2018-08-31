@@ -40,7 +40,8 @@ var argv = require("yargs")
   .describe('individual-deal-price', 'Desired Price Per Passenger')
   .describe('total-deal-price', 'Desired Total Price')
   .describe('interval', 'API Polling Interval')
-  .demandOption(['from', 'to', 'leave-date', 'return-date', 'passengers'])
+  .describe('one-way', 'One way trip?')
+  .demandOption(['from', 'to', 'leave-date', 'passengers'])
   .default('interval', 30)
   .argv
 
@@ -53,6 +54,7 @@ var adultPassengerCount = argv.passengers
 var individualDealPrice = argv.individualDealPrice
 var totalDealPrice = argv.totalDealPrice
 var interval = argv.interval
+var oneWay = argv.oneWay
 
 // Check if Twilio env vars are set
 const isTwilioConfigured = process.env.TWILIO_ACCOUNT_SID &&
@@ -96,8 +98,12 @@ class Dashboard {
         style: {
           line: "red"
         }
-      },
-      return: {
+      }
+    }
+
+    
+    if (!oneWay)
+      this.graphs.return = {
         title: "Destination/Return",
         x: [],
         y: [],
@@ -105,7 +111,6 @@ class Dashboard {
           line: "yellow"
         }
       }
-    }
 
     // Shared settings
     const shared = {
@@ -222,15 +227,21 @@ class Dashboard {
       y: [...this.graphs.outbound.y, prices.outbound]
     })
 
-    Object.assign(this.graphs.return, {
-      x: [...this.graphs.return.x, now],
-      y: [...this.graphs.return.y, prices.return]
-    })
-
-    this.widgets.graph.setData([
-      this.graphs.outbound,
-      this.graphs.return
-    ])
+    if (!oneWay){
+      Object.assign(this.graphs.return, {
+        x: [...this.graphs.return.x, now],
+        y: [...this.graphs.return.y, prices.return]
+      })
+      this.widgets.graph.setData([
+        this.graphs.outbound,
+        this.graphs.return
+      ])
+    }
+    else{
+      this.widgets.graph.setData([
+        this.graphs.outbound,
+      ])
+    }  
   }
 
   /**
@@ -340,9 +351,10 @@ function generateRequestObject() {
               FlexDaysIn: 0,
               FlexDaysOut: 0,
               INF: 0,
-              RoundTrip: true,
+              RoundTrip: !oneWay,
               TEEN: 0,
-              exists: false
+              exists: false,
+              ToUs: 'AGREED'
           },
           json: true // Automatically parses the JSON string in the response
         })
@@ -362,12 +374,15 @@ const fetch = () => {
     .then((data) => {
       var outPrice = data.trips[0].dates[0].flights[0].regularFare.fares[0].amount
       fares.outbound.push(outPrice)
-      var inPrice = data.trips[1].dates[0].flights[0].regularFare.fares[0].amount
-      fares.return.push(outPrice)
+      if(!oneWay){
+        var inPrice = data.trips[1].dates[0].flights[0].regularFare.fares[0].amount
+        fares.return.push(inPrice)
+      }
     })
     .then(() => {
       const lowestOutboundFare = Math.min(...fares.outbound)
-      const lowestReturnFare = Math.min(...fares.return)
+      const lowestReturnFare = oneWay? 0 : Math.min(...fares.return)
+      
       var faresAreValid = true
 
       // Clear previous fares
@@ -376,7 +391,7 @@ const fetch = () => {
 
       // Get difference from previous fares
       const outboundFareDiff = prevLowestOutboundFare - lowestOutboundFare
-      const returnFareDiff = prevLowestReturnFare - lowestReturnFare
+      const returnFareDiff = oneWay? 0 : (prevLowestReturnFare - lowestReturnFare)
       var outboundFareDiffString = ""
       var returnFareDiffString = ""
 
@@ -396,7 +411,7 @@ const fetch = () => {
           outboundFareDiffString = chalk.blue(`(no change)`)
         }
 
-        if (returnFareDiff > 0) {
+        if (returnFareDiff > 0 && !oneWay) {
           returnFareDiffString = chalk.green(`(down \€${Math.abs(returnFareDiff)})`)
         } else if (returnFareDiff < 0) {
           returnFareDiffString = chalk.red(`(up \€${Math.abs(returnFareDiff)})`)
@@ -431,15 +446,24 @@ const fetch = () => {
           }
         }
 
-        dashboard.log([
-          `Lowest fares for an outbound flight is currently \€${[lowestOutboundFare, outboundFareDiffString].filter(i => i).join(" ")}`,
-          `Lowest fares for a return flight is currently \€${[lowestReturnFare, returnFareDiffString].filter(i => i).join(" ")}`
-        ])
-
-        dashboard.plot({
-          outbound: lowestOutboundFare,
-          return: lowestReturnFare
-        })
+        if(oneWay){
+          dashboard.log([
+            `Lowest fares for an outbound flight is currently \€${[lowestOutboundFare, outboundFareDiffString].filter(i => i).join(" ")}`,
+          ])
+          dashboard.plot({
+            outbound: lowestOutboundFare
+          })
+        }else{
+          dashboard.log([
+            `Lowest fares for an outbound flight is currently \€${[lowestOutboundFare, outboundFareDiffString].filter(i => i).join(" ")}`,
+            `Lowest fares for a return flight is currently \€${[lowestReturnFare, returnFareDiffString].filter(i => i).join(" ")}`
+          ])
+          dashboard.plot({
+            outbound: lowestOutboundFare,
+            return: lowestReturnFare
+          })
+        }
+          
       }
 
       dashboard.render()
@@ -469,11 +493,12 @@ dashboard.settings([
   `Origin airport: ${originAirport}`,
   `Destination airport: ${destinationAirport}`,
   `Outbound date: ${outboundDateString}`,
-  `Return date: ${returnDateString}`,
+  `Return date: ${oneWay? "---" : returnDateString}`,
   `Passengers: ${adultPassengerCount}`,
   `Interval: ${pretty(interval * TIME_MIN)}`,
   `Individual deal price: ${individualDealPrice ? `<= \€${individualDealPrice}` : "disabled"}`,
   `Total deal price: ${totalDealPrice ? `<= \€${totalDealPrice}` : "disabled"}`,
+  `One way trip? ${oneWay}`,
   `SMS alerts: ${isTwilioConfigured ? process.env.TWILIO_PHONE_TO : "disabled"}`
 ])
 
